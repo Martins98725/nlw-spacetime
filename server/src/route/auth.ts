@@ -11,34 +11,36 @@ export async function authRoutes(app: FastifyInstance){
 
         const { code } = bodySchema.parse(request.body)
 
-        const acessTokenResponse = await axios.post(
+        const accessTokenResponse = await axios.post(
             "https://github.com/login/oauth/access_token", 
             null,
             {
                 params: {
                     client_id: process.env.GITHUB_CLIENT_ID,
-                    client_secrets: process.env.GITHUB_CLIENT_SECRET,
+                    client_secret: process.env.GITHUB_CLIENT_SECRET,
                     code,
                 },
                 headers:{
-                    Accept: "aplications/json",
+                    Accept: "application/json",
                 },
-            }
+            },
         )
-        const { accesToken } = acessTokenResponse.data
+        const { accessToken } = accessTokenResponse.data
 
         const userResponse = await axios.get("https://api.github.com/user", {
             headers:{
-                Authorization: `Bearer ${accesToken}`,
+                Authorization: `Bearer ${accessToken}`,
             }
-        })
+        },
+    )
 
         const userSchema = z.object({
             id: z.number(),
             login: z.string(),
             name: z.string(),
             avatarUrl: z.string().url(),
-        })
+        },
+    )
 
         const userInfo = userSchema.parse(userResponse.data)
 
@@ -46,7 +48,8 @@ export async function authRoutes(app: FastifyInstance){
             where:{
                 githubId: userInfo.id
             }
-        })
+        },
+    )
 
         if(!user){
             user = await prisma.user.create({
@@ -54,13 +57,23 @@ export async function authRoutes(app: FastifyInstance){
                     githubId: userInfo.id,
                     login: userInfo.login,
                     name: userInfo.name,
-                    avatrUrl: userInfo.avatarUrl,
+                    avatarUrl: userInfo.avatarUrl,
                 },
-            })
+            },)
         }
 
+        const token = app.jwt.sign(
+        {
+            name: user.name,
+            avatarUrl: user.avatarUrl,
+
+        },{
+            sub: user.id,
+            expiresIn: "30 days",
+        },
+    )
         return{
-            user,
+            token,
         }
     })
 }
