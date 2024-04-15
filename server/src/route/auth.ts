@@ -10,6 +10,7 @@ export async function authRoutes(app: FastifyInstance){
         })
 
         const { code } = bodySchema.parse(request.body)
+        //console.log(process.env.GITHUB_CLIENT_ID, process.env.GITHUB_CLIENT_SECRET )
 
         const accessTokenResponse = await axios.post(
             "https://github.com/login/oauth/access_token", 
@@ -25,20 +26,25 @@ export async function authRoutes(app: FastifyInstance){
                 },
             },
         )
-        const { accessToken } = accessTokenResponse.data
+
+        const { access_token } = accessTokenResponse.data    
+        console.log("TOKEN: ", access_token)
 
         const userResponse = await axios.get("https://api.github.com/user", {
             headers:{
-                Authorization: `Bearer ${accessToken}`,
+                Authorization: `Bearer ${access_token}`,
             }
         },
+
     )
+
+    console.log(userResponse.data)
 
         const userSchema = z.object({
             id: z.number(),
             login: z.string(),
             name: z.string(),
-            avatarUrl: z.string().url(),
+            avatar_url: z.string().url(),
         },
     )
 
@@ -46,10 +52,12 @@ export async function authRoutes(app: FastifyInstance){
 
         let user = await prisma.user.findUnique({
             where:{
-                githubId: userInfo.id
+                githubId: userInfo.id,
             }
         },
     )
+
+    console.log("usuario: ", user)
 
         if(!user){
             user = await prisma.user.create({
@@ -57,23 +65,25 @@ export async function authRoutes(app: FastifyInstance){
                     githubId: userInfo.id,
                     login: userInfo.login,
                     name: userInfo.name,
-                    avatarUrl: userInfo.avatarUrl,
+                    avatarUrl: userInfo.avatar_url,
                 },
             },)
         }
 
         const token = app.jwt.sign(
-        {
-            name: user.name,
-            avatarUrl: user.avatarUrl,
+            {
+                name: user.name,
+                avatarUrl: user.avatarUrl,
 
-        },{
-            sub: user.id,
-            expiresIn: "30 days",
-        },
-    )
+            },{
+                sub: user.id,
+                expiresIn: "30 days",
+            },
+
+        );
+
         return{
             token,
-        }
-    })
+        };
+    });
 }

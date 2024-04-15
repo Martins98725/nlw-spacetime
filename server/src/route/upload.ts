@@ -4,13 +4,12 @@ import { FastifyInstance } from "fastify";
 import { createWriteStream } from "fs";
 import { pipeline } from "stream";
 import { promisify } from "util";
-import { ok } from "assert";
 
 
 const pump = promisify(pipeline)
 
 export async function uploadRoutes(app: FastifyInstance){
-    app.post("/register", async (request, reply) =>{
+    app.post("/upload", async (request, reply) =>{
         const upload = await request.file({
             limits:{
                 fileSize: 5_242_880,

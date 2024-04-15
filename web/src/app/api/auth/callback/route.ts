@@ -10,7 +10,8 @@ export async function GET(request:NextRequest) {
 
     const registerResponse = await api.post("/register", {
         code,
-    })
+    }) 
+
 
     const { token } = registerResponse.data
 
