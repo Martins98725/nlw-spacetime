@@ -21,7 +21,7 @@ export function NewMemoryForms(){
 
         const fileToUpload = formData.get("coverUrl")
 
-        let converUrl = " "
+        let coverUrl = ""
 
 
         if(fileToUpload){
@@ -31,27 +31,28 @@ export function NewMemoryForms(){
 
             const uploadResponse = await api.post("/upload", uploadFormData)
 
-            converUrl = uploadResponse.data.fileUrl
+            coverUrl = uploadResponse.data.fileUrl
  
         }
-        console.log(converUrl)
+       
 
         const token = Cookie.get("token")
 
         await api.post("/memories", {
-            converUrl, 
+            coverUrl, 
             content: formData.get("content"),
             isPublic: formData.get("isPublic"), 
         }, {
             headers:{
                 Authorization: `Bearer ${token}`,
-            }
-        })
-
+                
+            },
+        },
+    )
 
         router.push("/")
 
-    }
+}
  
 
     return (
